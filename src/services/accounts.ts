@@ -9,7 +9,23 @@ import {
 import type { AccountSnapshot } from "../clients/algonode.js";
 import { fetchAccount } from "../clients/algonode.js";
 
-export async function addWatchedAccount(prisma: PrismaClient, address: string) {
+type AddAccountError = {
+  ok: false;
+  code: "invalid_address";
+};
+
+type AddAccountSuccess = {
+  ok: true;
+  created: boolean;
+  address: string;
+};
+
+export type AddAccountResponse = AddAccountSuccess | AddAccountError;
+
+export async function addWatchedAccount(
+  prisma: PrismaClient,
+  address: string,
+): Promise<AddAccountResponse> {
   // Validate Algorand address
   if (!algosdk.isValidAddress(address)) {
     return { ok: false, code: "invalid_address" };
