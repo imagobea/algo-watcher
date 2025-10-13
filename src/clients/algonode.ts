@@ -1,11 +1,11 @@
-const BASE =
+const BASE_URL =
   process.env.ALGONODE_BASE_URL ?? "https://testnet-api.algonode.cloud";
-const TIMEOUT_MS = Number(process.env.HTTP_TIMEOUT_MS ?? 5000);
+const TIMEOUT_MS = Number(process.env.ALGONODE_HTTP_TIMEOUT_MS ?? 5000);
 
 export type AccountSnapshot = { amount: bigint; round: bigint };
 
 export async function fetchAccount(address: string): Promise<AccountSnapshot> {
-  const url = `${BASE}/v2/accounts/${address}`;
+  const url = `${BASE_URL}/v2/accounts/${address}`;
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
     if (!res.ok) throw new Error(`HTTP_${res.status}: ${res.statusText}`);
