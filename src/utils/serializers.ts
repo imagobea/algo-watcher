@@ -1,4 +1,4 @@
-import type { AccountState, WatchedAccount } from '@prisma/client';
+import type { AccountState, WatchedAccount } from "@prisma/client";
 
 interface SerializedWatchedAccount {
   address: string;
@@ -17,13 +17,15 @@ interface SerializedAccountState {
   lastErrorAt: string | null;
 }
 
-export function serializeWatchedAccount(account: WatchedAccount & { state: AccountState | null }): SerializedWatchedAccount {
+export function serializeWatchedAccount(
+  account: WatchedAccount & { state: AccountState | null },
+): SerializedWatchedAccount {
   return {
     address: account.address,
     createdAt: account.createdAt.toISOString(),
     unwatchedAt: account.unwatchedAt?.toISOString() ?? null,
     isActive: account.isActive,
-    state: account.state ? serializeAccountState(account.state) : null
+    state: account.state ? serializeAccountState(account.state) : null,
   };
 }
 
@@ -34,6 +36,6 @@ function serializeAccountState(state: AccountState): SerializedAccountState {
     lastRound: state.lastRound.toString(),
     errorCount: state.errorCount,
     lastError: state.lastError,
-    lastErrorAt: state.lastErrorAt?.toISOString() ?? null
+    lastErrorAt: state.lastErrorAt?.toISOString() ?? null,
   };
 }

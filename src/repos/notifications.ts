@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from "@prisma/client";
 
 export async function createBalanceChangeNotification(
   prisma: PrismaClient,
@@ -6,7 +6,7 @@ export async function createBalanceChangeNotification(
   oldBalance: bigint,
   newBalance: bigint,
   diff: bigint,
-  round: bigint
+  round: bigint,
 ) {
   const now = new Date();
   return prisma.balanceChangeNotification.create({
@@ -16,7 +16,7 @@ export async function createBalanceChangeNotification(
       newBalance: newBalance,
       diff: diff,
       observedAt: now,
-      round: round
-    }
+      round: round,
+    },
   });
 }

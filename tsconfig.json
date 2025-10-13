@@ -11,7 +11,7 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    "exactOptionalPropertyTypes": true, // ok
+    "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",

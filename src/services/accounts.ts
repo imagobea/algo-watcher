@@ -1,13 +1,18 @@
-import type { PrismaClient } from '@prisma/client';
-import algosdk, { type Account } from 'algosdk';
-import { findByAddress, createWatchedAccount, createAccountState, listActiveWithState } from '../repos/accounts.js';
-import type { AccountSnapshot } from '../clients/algonode.js';
-import { fetchAccount } from '../clients/algonode.js';
+import type { PrismaClient } from "@prisma/client";
+import algosdk from "algosdk";
+import {
+  findByAddress,
+  createWatchedAccount,
+  createAccountState,
+  listActiveWithState,
+} from "../repos/accounts.js";
+import type { AccountSnapshot } from "../clients/algonode.js";
+import { fetchAccount } from "../clients/algonode.js";
 
 export async function addWatchedAccount(prisma: PrismaClient, address: string) {
   // Validate Algorand address
   if (!algosdk.isValidAddress(address)) {
-    return { ok: false, code: 'invalid_address' };
+    return { ok: false, code: "invalid_address" };
   }
 
   // Check if already exists
@@ -15,22 +20,22 @@ export async function addWatchedAccount(prisma: PrismaClient, address: string) {
   if (existing) return { ok: true, created: false, address };
 
   // Fetch account info from Algorand node
-  let accountSnaphot: AccountSnapshot | null = null;
+  let accountSnapshot: AccountSnapshot | null = null;
   try {
-    accountSnaphot = await fetchAccount(address);
-  } catch (err) {
-    accountSnaphot = null; // non-fatal, proceed
+    accountSnapshot = await fetchAccount(address);
+  } catch {
+    accountSnapshot = null; // non-fatal, proceed
   }
 
   // Write to DB
-  if (accountSnaphot) {
+  if (accountSnapshot) {
     await prisma.$transaction(async (tx) => {
       await createWatchedAccount(tx, address);
       await createAccountState(
         tx,
         address,
-        accountSnaphot.amount,
-        accountSnaphot.round
+        accountSnapshot.amount,
+        accountSnapshot.round,
       );
     });
     return { ok: true, created: true, address };
