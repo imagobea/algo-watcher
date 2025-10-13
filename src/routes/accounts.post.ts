@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { AddAccountSchema } from '../validation/schemas.js';
+import { AddAccountSchema } from '../utils/schemas.js';
 import { addWatchedAccount } from '../services/accounts.js';
 
 export default async function routes(app: FastifyInstance) {
