@@ -1,12 +1,12 @@
 ### TODO
 
-- [] lint, add lint script
-- [] add openapi plugin to fastify, add some docs
+- [] notifications endpoint, paginated
 - [] add testing framework, add some tests
 - [] dockerise app
+- [] add openapi plugin to fastify, add some docs
 - [] develop this README file
-- [] notifications endpoint
-- [] paginate GET notifications, GET accounts
-- [] self-review - error-handling, logs and log level
-- [] loggin format and id
-- [] production access controls
+- [] self-review: overall code, error-handling, logs, security,...
+
+### Extensions
+
+- production access controls
