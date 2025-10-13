@@ -30,6 +30,51 @@ export async function createAccountState(
   });
 }
 
+export async function updateAccountStateCheckOk(
+  prisma: DB,
+  address: string,
+  balance: bigint,
+  round: bigint
+): Promise<AccountState | null> {
+  const existing = await prisma.accountState.findUnique({ where: { address } });
+  const now = new Date();
+  if (existing) {
+    return prisma.accountState.update({
+      where: { address },
+      data: {
+        balanceMicro: balance,
+        lastCheckedAt: now,
+        lastRound: round,
+        errorCount: 0,
+        lastError: null,
+        lastErrorAt: null
+      }
+    });
+  }
+  return createAccountState(prisma, address, balance, round);
+}
+
+export async function updateAccountStateCheckKo(
+  prisma: DB,
+  address: string,
+  errorMessage?: string
+): Promise<AccountState | null> {
+  const existing = await prisma.accountState.findUnique({ where: { address } });
+  const now = new Date();
+  if (existing) {
+    return prisma.accountState.update({
+      where: { address },
+      data: {
+        lastCheckedAt: now,
+        errorCount: existing.errorCount + 1,
+        lastError: errorMessage ?? 'unknown error',
+        lastErrorAt: now
+      }
+    });
+  }
+  return null;
+}
+
 export function listActiveWithState(prisma: DB) {
   return prisma.watchedAccount.findMany({
     where: { isActive: true },

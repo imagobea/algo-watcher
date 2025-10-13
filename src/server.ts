@@ -2,6 +2,7 @@ import Fastify from 'fastify';
 import accountsPost from './routes/accounts.post.js';
 import accountsGet from './routes/accounts.get.js';
 import prismaPlugin from './plugins/prisma.js';
+import pollerPlugin from './plugins/poller.js';
 import 'dotenv/config';
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -12,12 +13,15 @@ const app = Fastify({
   logger: { level: LOG_LEVEL, transport: { target: 'pino-pretty', options: { colorize: true } } },
 });
 
-// Register plugins
+// Register db plugin
 app.register(prismaPlugin);
 
 // Register routes
 app.register(accountsPost);
 app.register(accountsGet);
+
+// Register poller plugin
+app.register(pollerPlugin);
 
 // Simple routes - TODO move to separate files
 
