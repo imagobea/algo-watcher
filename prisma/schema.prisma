@@ -9,17 +9,17 @@ datasource db {
 
 model WatchedAccount {
   /// Algorand account being monitored
-  address     String         @id
+  address        String                      @id
   /// When the watch was added
-  createdAt   DateTime       @default(now())
+  createdAt      DateTime                    @default(now())
   /// When the watch was removed
-  unwatchedAt DateTime?
+  unwatchedAt    DateTime?
   /// True for accounts being watched and polled
-  isActive    Boolean        @default(true)
+  isActive       Boolean                     @default(true)
   /// Latest known state
-  state       AccountState?
+  state          AccountState?
   /// History of balance change notifications
-  notes       Notification[]
+  balanceChanges BalanceChangeNotification[]
 }
 
 model AccountState {
@@ -41,7 +41,7 @@ model AccountState {
   account WatchedAccount @relation(fields: [address], references: [address])
 }
 
-model Notification {
+model BalanceChangeNotification {
   /// Unique identifier for this notification event
   id         String   @id @default(cuid())
   /// Address whose balance changed
