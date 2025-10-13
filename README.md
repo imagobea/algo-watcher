@@ -10,3 +10,5 @@
 ### Extensions
 
 - production access controls
+- api versioning
+- ability to unwatch/rewatch accounts

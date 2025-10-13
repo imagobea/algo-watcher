@@ -32,20 +32,28 @@ app.register(accountsGet);
 // Register poller plugin
 app.register(pollerPlugin);
 
-// Simple routes - TODO move to separate files
+// Root route
+app.get("/", async () => ({
+  name: "Algo Watcher",
+  version: "1.0.0",
+  description: "Watch Algorand accounts and notify on balance changes",
+  docs: "/docs",
+  health: { liveliness: "/health/liveness", readiness: "/health/readiness" },
+}));
 
-// root - TODO review
-// app.get("/", async (request, reply) => {
-//   return { hello: "world" };
-// });
-
-// health
+// Server liveliness
 app.get("/health/liveness", async () => ({ ok: true }));
 
-// quick DB ping route
-app.get("/db/ping", async () => {
-  const count = await app.prisma.watchedAccount.count();
-  return { ok: true, accounts: count };
+// Server readiness
+app.get("/health/readiness", async (_req, reply) => {
+  try {
+    await app.prisma.$connect();
+    await app.prisma.$queryRaw`SELECT 1`;
+    return reply.code(200).send({ db: "ok" });
+  } catch (err) {
+    app.log.error(err);
+    return reply.code(503).send({ db: "error" });
+  }
 });
 
 const start = async () => {
