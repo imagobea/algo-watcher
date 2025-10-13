@@ -1,13 +1,12 @@
-import type { PrismaClient } from "@prisma/client";
 import algosdk from "algosdk";
+import type { PrismaClient } from "@prisma/client";
 import {
   findByAddress,
   createWatchedAccount,
   createAccountState,
   listActiveWithState,
 } from "../repos/accounts.js";
-import type { AccountSnapshot } from "../clients/algonode.js";
-import { fetchAccount } from "../clients/algonode.js";
+import { type AccountSnapshot, fetchAccount } from "../clients/algonode.js";
 
 type AddAccountError = {
   ok: false;
