@@ -1,4 +1,6 @@
 import Fastify from 'fastify';
+import accountsPost from './routes/accounts.post.js';
+import accountsGet from './routes/accounts.get.js';
 import prismaPlugin from './plugins/prisma.js';
 import 'dotenv/config';
 
@@ -12,6 +14,12 @@ const app = Fastify({
 
 // Register plugins
 app.register(prismaPlugin);
+
+// Register routes
+app.register(accountsPost);
+app.register(accountsGet);
+
+// Simple routes - TODO move to separate files
 
 // root
 app.get('/', async (request, reply) => {
