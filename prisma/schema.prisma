@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model WatchedAccount {
+  /// Algorand account being monitored
+  address     String         @id
+  /// When the watch was added
+  createdAt   DateTime       @default(now())
+  /// When the watch was removed
+  unwatchedAt DateTime?
+  /// True for accounts being watched and polled
+  isActive    Boolean        @default(true)
+  /// Latest known state
+  state       AccountState?
+  /// History of balance change notifications
+  notes       Notification[]
+}
+
+model AccountState {
+  /// Account address this state belongs to (1-to-1 with WatchedAccount)
+  address       String    @id
+  /// Latest known balance in microAlgos
+  balanceMicro  BigInt
+  /// Timestamp of the most recent polling attempt (successful or failed)
+  lastCheckedAt DateTime  @default(now())
+  /// Algorand round number corresponding to the last successful check
+  lastRound     BigInt
+  /// Total number of consecutive polling errors recorded for this account
+  errorCount    Int       @default(0)
+  /// Short description of the last error
+  lastError     String?
+  /// When the last error occurred
+  lastErrorAt   DateTime?
+
+  account WatchedAccount @relation(fields: [address], references: [address])
+}
+
+model Notification {
+  /// Unique identifier for this notification event
+  id         String   @id @default(cuid())
+  /// Address whose balance changed
+  address    String
+  /// Previous balance in microAlgos (from last successful snapshot)
+  oldBalance BigInt
+  /// New balance in microAlgos (from current successful snapshot)
+  newBalance BigInt
+  /// Convenience field: newBalance - oldBalance (can be negative)
+  diff       BigInt
+  /// When this change was observed
+  observedAt DateTime @default(now())
+  /// Algorand round associated with the observation
+  round      BigInt
+
+  account WatchedAccount @relation(fields: [address], references: [address])
+
+  @@index([address, observedAt(sort: Desc)])
+}

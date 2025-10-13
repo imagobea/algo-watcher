@@ -1,4 +1,5 @@
 import Fastify from 'fastify';
+import prismaPlugin from './plugins/prisma.js';
 import 'dotenv/config';
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -9,6 +10,9 @@ const app = Fastify({
   logger: { level: LOG_LEVEL, transport: { target: 'pino-pretty', options: { colorize: true } } },
 });
 
+// Register plugins
+app.register(prismaPlugin);
+
 // root
 app.get('/', async (request, reply) => {
     return { hello: 'world' };
@@ -16,6 +20,12 @@ app.get('/', async (request, reply) => {
 
 // health
 app.get('/health/liveness', async () => ({ ok: true }));
+
+// quick DB ping route
+app.get('/db/ping', async () => {
+  const count = await app.prisma.watchedAccount.count();
+  return { ok: true, accounts: count };
+});
 
 const start = async () => {
     try {
