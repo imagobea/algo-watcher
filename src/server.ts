@@ -3,6 +3,7 @@ import accountsPost from "./routes/accounts.post.js";
 import accountsGet from "./routes/accounts.get.js";
 import prismaPlugin from "./plugins/prisma.js";
 import pollerPlugin from "./plugins/poller.js";
+import swaggerPlugin from "./plugins/swagger.js";
 import "dotenv/config";
 
 const PORT = Number(process.env.PORT ?? 8080);
@@ -21,6 +22,9 @@ const app = Fastify({
     transport: { target: "pino-pretty", options: { colorize: true } },
   },
 });
+
+// Register swagger plugin
+app.register(swaggerPlugin);
 
 // Register db plugin
 app.register(prismaPlugin);

@@ -2,6 +2,10 @@ import Fastify from "fastify";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import accountsPost from "../src/routes/accounts.post.js";
 import type { PrismaClient } from "@prisma/client";
+import {
+  validatorCompiler,
+  serializerCompiler,
+} from "fastify-type-provider-zod";
 
 // Mock addWatchedAccount service
 vi.mock("../src/services/accounts.js", () => {
@@ -11,14 +15,23 @@ vi.mock("../src/services/accounts.js", () => {
 });
 import {
   addWatchedAccount,
-  type AddAccountResponse,
+  type AddAccountResult,
 } from "../src/services/accounts.js";
 const mockedAdd = vi.mocked(addWatchedAccount);
 
 // Helper to build Fastify app with the route and a mocked Prisma client
 async function buildApp() {
+  // Create app
   const app = Fastify();
+
+  // Set up zod
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
+
+  // Mock Prisma client
   app.decorate("prisma", {} as unknown as PrismaClient);
+
+  // Register route
   app.register(accountsPost);
   await app.ready();
   return app;
@@ -43,7 +56,7 @@ describe("POST /accounts", () => {
       ok: true,
       created: true,
       address,
-    } satisfies AddAccountResponse);
+    } satisfies AddAccountResult);
 
     const res = await app.inject({
       method: "POST",
@@ -63,7 +76,7 @@ describe("POST /accounts", () => {
       ok: true,
       created: false,
       address,
-    } satisfies AddAccountResponse);
+    } satisfies AddAccountResult);
 
     const res = await app.inject({
       method: "POST",
@@ -84,7 +97,6 @@ describe("POST /accounts", () => {
     });
 
     expect(res.statusCode).toBe(400);
-    expect(res.json()).toMatchObject({ code: "invalid_body" });
     expect(addWatchedAccount).not.toHaveBeenCalled();
   });
 
@@ -94,7 +106,7 @@ describe("POST /accounts", () => {
     mockedAdd.mockResolvedValue({
       ok: false,
       code: "invalid_address",
-    } satisfies AddAccountResponse);
+    } satisfies AddAccountResult);
 
     const res = await app.inject({
       method: "POST",

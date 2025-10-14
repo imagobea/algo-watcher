@@ -1,4 +1,15 @@
 import type { AccountState, WatchedAccount } from "@prisma/client";
+import { z } from "zod/v4";
+
+export const AddAccountResponse = z.object({
+  address: z.string(),
+  created: z.boolean(),
+});
+
+export const ErrorResponse = z.object({
+  code: z.string(),
+  message: z.string(),
+});
 
 interface SerializedWatchedAccount {
   address: string;

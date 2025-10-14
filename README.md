@@ -62,49 +62,56 @@ pnpm dev
 ### API
 
 1. Root
+
 ```bash
 curl localhost:8080/
 ```
 
 **Response**:
+
 ```json
 {
-    "name": "Algo Watcher",
-    "version": "1.0.0",
-    "description": "Watch Algorand accounts and notify on balance changes",
-    "docs": "/docs",
-    "health": {
-        "liveliness": "/health/liveness",
-        "readiness": "/health/readiness"
-    }
+  "name": "Algo Watcher",
+  "version": "1.0.0",
+  "description": "Watch Algorand accounts and notify on balance changes",
+  "docs": "/docs",
+  "health": {
+    "liveliness": "/health/liveness",
+    "readiness": "/health/readiness"
+  }
 }
 ```
 
 2. Server liveness
+
 ```bash
 curl localhost:8080/health/liveness
 ```
 
 **Response**:
+
 ```json
 {
-    "ok": true
+  "ok": true
 }
 ```
 
 3. Server readiness
+
 ```bash
 curl localhost:8080/health/readiness
 ```
 
 **Response**:
+
 ```json
 {
-    "db": "ok"
+  "db": "ok"
 }
 ```
 
 4. POST account (ie start watching)
+
 ```bash
 curl -X POST http://localhost:8080/accounts \
   -H "Content-Type: application/json" \
@@ -112,35 +119,38 @@ curl -X POST http://localhost:8080/accounts \
 ```
 
 **Response**:
+
 ```json
 {
-    "address": "ELJEB3OYX325FATYL765AM5ZSJPSWZX745TYM5KCLTTSHJN2BJSHEMQ2JE",
-    "created": true
+  "address": "ELJEB3OYX325FATYL765AM5ZSJPSWZX745TYM5KCLTTSHJN2BJSHEMQ2JE",
+  "created": true
 }
 ```
 
 5. GET accounts
+
 ```bash
 curl localhost:8080/accounts
 ```
 
 **Response**:
+
 ```json
 [
-    {
-        "address": "ELJEB3OYX325FATYL765AM5ZSJPSWZX745TYM5KCLTTSHJN2BJSHEMQ2JE",
-        "createdAt": "2025-10-12T18:15:15.496Z",
-        "unwatchedAt": null,
-        "isActive": true,
-        "state": {
-            "balanceMicro": "93633548075",
-            "lastCheckedAt": "2025-10-14T07:57:33.303Z",
-            "lastRound": "56504702",
-            "errorCount": 0,
-            "lastError": null,
-            "lastErrorAt": null
-        }
+  {
+    "address": "ELJEB3OYX325FATYL765AM5ZSJPSWZX745TYM5KCLTTSHJN2BJSHEMQ2JE",
+    "createdAt": "2025-10-12T18:15:15.496Z",
+    "unwatchedAt": null,
+    "isActive": true,
+    "state": {
+      "balanceMicro": "93633548075",
+      "lastCheckedAt": "2025-10-14T07:57:33.303Z",
+      "lastRound": "56504702",
+      "errorCount": 0,
+      "lastError": null,
+      "lastErrorAt": null
     }
+  }
 ]
 ```
 

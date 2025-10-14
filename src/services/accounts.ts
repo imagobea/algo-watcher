@@ -19,12 +19,12 @@ type AddAccountSuccess = {
   address: string;
 };
 
-export type AddAccountResponse = AddAccountSuccess | AddAccountError;
+export type AddAccountResult = AddAccountSuccess | AddAccountError;
 
 export async function addWatchedAccount(
   prisma: PrismaClient,
   address: string,
-): Promise<AddAccountResponse> {
+): Promise<AddAccountResult> {
   // Validate Algorand address
   if (!algosdk.isValidAddress(address)) {
     return { ok: false, code: "invalid_address" };
