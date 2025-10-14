@@ -37,7 +37,7 @@ app.get("/", async () => ({
   name: "Algo Watcher",
   version: "1.0.0",
   description: "Watch Algorand accounts and notify on balance changes",
-  docs: "/docs",
+  docs: "/docs", // TODO: Add Swagger docs
   health: { liveliness: "/health/liveness", readiness: "/health/readiness" },
 }));
 
