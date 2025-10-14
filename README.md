@@ -126,20 +126,22 @@ curl localhost:8080/accounts
 
 **Response**:
 ```json
-{
-    "address": "ELJEB3OYX325FATYL765AM5ZSJPSWZX745TYM5KCLTTSHJN2BJSHEMQ2JE",
-    "createdAt": "2025-10-12T18:15:15.496Z",
-    "unwatchedAt": null,
-    "isActive": true,
-    "state": {
-        "balanceMicro": "93633548075",
-        "lastCheckedAt": "2025-10-14T07:57:33.303Z",
-        "lastRound": "56504702",
-        "errorCount": 0,
-        "lastError": null,
-        "lastErrorAt": null
+[
+    {
+        "address": "ELJEB3OYX325FATYL765AM5ZSJPSWZX745TYM5KCLTTSHJN2BJSHEMQ2JE",
+        "createdAt": "2025-10-12T18:15:15.496Z",
+        "unwatchedAt": null,
+        "isActive": true,
+        "state": {
+            "balanceMicro": "93633548075",
+            "lastCheckedAt": "2025-10-14T07:57:33.303Z",
+            "lastRound": "56504702",
+            "errorCount": 0,
+            "lastError": null,
+            "lastErrorAt": null
+        }
     }
-}
+]
 ```
 
 ## How to test
