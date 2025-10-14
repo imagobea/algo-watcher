@@ -13,6 +13,8 @@ export default async function routes(app: FastifyInstance) {
       schema: {
         tags: ["accounts"],
         summary: "Add an Algorand account to watch",
+        description:
+          "Adds an Algorand account to the watch list. If the account is valid and not already being watched, it will be added to the database. It will also attempt to fetch the current account state from the Algorand node, but this is non-fatal if it fails since the poller will continue to check the account state and update it accordingly.",
         body: AddAccountSchema,
         response: {
           200: AddAccountResponse.describe("Account already being watched"),

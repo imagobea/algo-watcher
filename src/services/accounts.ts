@@ -21,6 +21,18 @@ type AddAccountSuccess = {
 
 export type AddAccountResult = AddAccountSuccess | AddAccountError;
 
+/**
+ * addWatchedAccount tries to add an Algorand account to the watch list.
+ * 
+ * It first validates the address, then checks if it's already being watched.
+ * If not, it attempts to fetch the current account state from the Algorand node.
+ * If successful, it stores both the account and its initial state in the database.
+ * If fetching the account state fails, it still adds the account without initial state.
+ * 
+ * @param prisma - Prisma client instance
+ * @param address - Algorand account address to watch
+ * @returns Promise resolving to AddAccountResult
+ */
 export async function addWatchedAccount(
   prisma: PrismaClient,
   address: string,

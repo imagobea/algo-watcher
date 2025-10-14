@@ -164,10 +164,9 @@ You can discover accounts to track on the [Lora explorer](https://lora.algokit.i
 
 ## TODO
 
-- [] docs: add openapi plugin to fastify, populate docs
 - [] api: paginate accounts, notifications endpoint also paginated
 - [] test: increase coverage, integration tests
-- [] ci/cd: dockerise app
+- [] ci/cd: dockerise app, gha, ...
 
 ## Extensions
 
