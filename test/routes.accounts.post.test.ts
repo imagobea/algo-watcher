@@ -6,6 +6,11 @@ import {
   validatorCompiler,
   serializerCompiler,
 } from "fastify-type-provider-zod";
+import { errorHandler } from "../src/utils/error-handler.js";
+import {
+  DbWriteFailedError,
+  InvalidAlgoAddressError,
+} from "../src/utils/errors.js";
 
 // Mock addWatchedAccount service
 vi.mock("../src/services/accounts.js", () => {
@@ -19,14 +24,17 @@ import {
 } from "../src/services/accounts.js";
 const mockedAdd = vi.mocked(addWatchedAccount);
 
-// Helper to build Fastify app with the route and a mocked Prisma client
+// Helper to build minimal Fastify app with the route and a mocked Prisma client
 async function buildApp() {
-  // Create app
+  // Create app with fake logger
   const app = Fastify();
 
   // Set up zod
   app.setValidatorCompiler(validatorCompiler);
   app.setSerializerCompiler(serializerCompiler);
+
+  // Set up error handler
+  app.setErrorHandler(errorHandler);
 
   // Mock Prisma client
   app.decorate("prisma", {} as unknown as PrismaClient);
@@ -34,6 +42,7 @@ async function buildApp() {
   // Register route
   app.register(accountsPost);
   await app.ready();
+
   return app;
 }
 
@@ -66,7 +75,11 @@ describe("POST /accounts", () => {
 
     expect(res.statusCode).toBe(201);
     expect(res.json()).toEqual({ address, created: true });
-    expect(addWatchedAccount).toHaveBeenCalledWith(app.prisma, address);
+    expect(addWatchedAccount).toHaveBeenCalledWith(
+      app.prisma,
+      app.log,
+      address,
+    );
   });
 
   it("should return 200 if account already exists", async () => {
@@ -86,7 +99,11 @@ describe("POST /accounts", () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.json()).toEqual({ address, created: false });
-    expect(addWatchedAccount).toHaveBeenCalledWith(app.prisma, address);
+    expect(addWatchedAccount).toHaveBeenCalledWith(
+      app.prisma,
+      app.log,
+      address,
+    );
   });
 
   it("should return 400 for invalid request body", async () => {
@@ -103,10 +120,8 @@ describe("POST /accounts", () => {
   it("should return 422 for invalid Algorand address", async () => {
     const address = "INVALID_ADDRESS";
 
-    mockedAdd.mockResolvedValue({
-      ok: false,
-      code: "invalid_address",
-    } satisfies AddAccountResult);
+    // Mock to throw InvalidAlgoAddressError
+    mockedAdd.mockRejectedValue(InvalidAlgoAddressError());
 
     const res = await app.inject({
       method: "POST",
@@ -115,7 +130,36 @@ describe("POST /accounts", () => {
     });
 
     expect(res.statusCode).toBe(422);
-    expect(res.json()).toMatchObject({ code: "invalid_address" });
-    expect(addWatchedAccount).toHaveBeenCalledWith(app.prisma, address);
+    expect(res.json()).toMatchObject({
+      code: "APP_ERR_INVALID_ALGO_ADDRESS",
+    });
+    expect(addWatchedAccount).toHaveBeenCalledWith(
+      app.prisma,
+      app.log,
+      address,
+    );
+  });
+
+  it("should return 503 for database write failure", async () => {
+    const address = "SOME58CHARACTERLONGADDRESS1234567890ABCDE";
+
+    // Mock to throw DbWriteFailedError
+    mockedAdd.mockRejectedValue(DbWriteFailedError());
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/accounts",
+      payload: { address },
+    });
+
+    expect(res.statusCode).toBe(503);
+    expect(res.json()).toMatchObject({
+      code: "APP_ERR_DB_WRITE_FAILED",
+    });
+    expect(addWatchedAccount).toHaveBeenCalledWith(
+      app.prisma,
+      app.log,
+      address,
+    );
   });
 });

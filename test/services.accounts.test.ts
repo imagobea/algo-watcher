@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type {
-  AccountState,
-  PrismaClient,
-  WatchedAccount,
+import {
+  Prisma,
+  type AccountState,
+  type PrismaClient,
+  type WatchedAccount,
 } from "@prisma/client";
 import { addWatchedAccount } from "../src/services/accounts.js";
+import type { FastifyBaseLogger } from "fastify";
+import {
+  DbWriteFailedError,
+  InvalidAlgoAddressError,
+} from "../src/utils/errors.js";
 
 // Mock the repos functions
 vi.mock("../src/repos/accounts.js", () => {
@@ -28,7 +34,11 @@ const mockedCreateAccountState = vi.mocked(createAccountState);
 vi.mock("../src/clients/algonode.js", () => {
   return { fetchAccount: vi.fn() };
 });
-import { fetchAccount, type AccountSnapshot } from "../src/clients/algonode.js";
+import {
+  fetchAccount,
+  type FetchSuccess,
+  type FetchError,
+} from "../src/clients/algonode.js";
 const mockedFetchAccount = vi.mocked(fetchAccount);
 
 describe("addWatchedAccount", () => {
@@ -36,11 +46,14 @@ describe("addWatchedAccount", () => {
     vi.resetAllMocks();
   });
 
-  it("should return error for invalid address", async () => {
+  it("should throw error for invalid address", async () => {
     const prisma = {} as PrismaClient;
-    const res = await addWatchedAccount(prisma, "invalid_address");
+    const logger = { warn: vi.fn() } as unknown as FastifyBaseLogger;
 
-    expect(res).toEqual({ ok: false, code: "invalid_address" });
+    await expect(
+      addWatchedAccount(prisma, logger, "BAD_ADDRESS"),
+    ).rejects.toThrowError(InvalidAlgoAddressError());
+
     expect(mockedFindByAddress).not.toHaveBeenCalled();
     expect(mockedFetchAccount).not.toHaveBeenCalled();
     expect(mockedCreateWatchedAccount).not.toHaveBeenCalled();
@@ -49,6 +62,7 @@ describe("addWatchedAccount", () => {
 
   it("should return existing account if already watched", async () => {
     const prisma = {} as PrismaClient;
+    const logger = { debug: vi.fn() } as unknown as FastifyBaseLogger;
     const address =
       "NSKZ6G52YV7JO2XRVPA3E6UFH72JKE77HX24FZQUDN7WDZ7BUQK53BPTMI";
 
@@ -59,9 +73,9 @@ describe("addWatchedAccount", () => {
       isActive: true,
     } as WatchedAccount);
 
-    const res = await addWatchedAccount(prisma, address);
+    const result = await addWatchedAccount(prisma, logger, address);
 
-    expect(res).toEqual({ ok: true, created: false, address });
+    expect(result).toEqual({ ok: true, created: false, address });
     expect(mockedFindByAddress).toHaveBeenCalledWith(prisma, address);
     expect(mockedFetchAccount).not.toHaveBeenCalled();
     expect(mockedCreateWatchedAccount).not.toHaveBeenCalled();
@@ -72,12 +86,17 @@ describe("addWatchedAccount", () => {
     const prisma = {
       $transaction: vi.fn((callback) => callback(prisma)),
     } as unknown as PrismaClient;
+    const logger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+    } as unknown as FastifyBaseLogger;
     const address =
       "NSKZ6G52YV7JO2XRVPA3E6UFH72JKE77HX24FZQUDN7WDZ7BUQK53BPTMI";
-    const accountSnapshot = {
-      amount: 1000n,
-      round: 123456n,
-    } as AccountSnapshot;
+    const accountSnapshot: FetchSuccess = {
+      ok: true,
+      amount: 100n,
+      round: 456n,
+    };
 
     mockedFindByAddress.mockResolvedValue(null);
     mockedFetchAccount.mockResolvedValue(accountSnapshot);
@@ -97,9 +116,9 @@ describe("addWatchedAccount", () => {
       lastErrorAt: null,
     } as AccountState);
 
-    const res = await addWatchedAccount(prisma, address);
+    const result = await addWatchedAccount(prisma, logger, address);
 
-    expect(res).toEqual({ ok: true, created: true, address });
+    expect(result).toEqual({ ok: true, created: true, address });
     expect(mockedFindByAddress).toHaveBeenCalledWith(prisma, address);
     expect(mockedFetchAccount).toHaveBeenCalledWith(address);
     expect(mockedCreateWatchedAccount).toHaveBeenCalledWith(prisma, address);
@@ -112,12 +131,23 @@ describe("addWatchedAccount", () => {
   });
 
   it("should add new account without state if fetch fails", async () => {
-    const prisma = {} as PrismaClient;
+    const prisma = {
+      $transaction: vi.fn((callback) => callback(prisma)),
+    } as unknown as PrismaClient;
+    const logger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+    } as unknown as FastifyBaseLogger;
     const address =
       "NSKZ6G52YV7JO2XRVPA3E6UFH72JKE77HX24FZQUDN7WDZ7BUQK53BPTMI";
+    const accountSnapshot: FetchError = {
+      ok: false,
+      type: "timeout",
+      message: "This is a timeout error",
+    };
 
     mockedFindByAddress.mockResolvedValue(null);
-    mockedFetchAccount.mockRejectedValue(new Error("Random error"));
+    mockedFetchAccount.mockResolvedValue(accountSnapshot);
     mockedCreateWatchedAccount.mockResolvedValue({
       address,
       createdAt: new Date(),
@@ -125,12 +155,75 @@ describe("addWatchedAccount", () => {
       isActive: true,
     } as WatchedAccount);
 
-    const res = await addWatchedAccount(prisma, address);
+    const result = await addWatchedAccount(prisma, logger, address);
 
-    expect(res).toEqual({ ok: true, created: true, address });
+    expect(result).toEqual({ ok: true, created: true, address });
     expect(mockedFindByAddress).toHaveBeenCalledWith(prisma, address);
     expect(mockedFetchAccount).toHaveBeenCalledWith(address);
     expect(mockedCreateWatchedAccount).toHaveBeenCalledWith(prisma, address);
+    expect(mockedCreateAccountState).not.toHaveBeenCalled();
+  });
+
+  it("should handle a unique constraint violation gracefully", async () => {
+    // Prisma throws this when a unique constraint fails (e.g., race condition)
+    const prismaError = new Prisma.PrismaClientKnownRequestError(
+      "Unique constraint failed on the fields: (`address`)",
+      { code: "P2002", clientVersion: "test" },
+    );
+    // Force $transaction to throw the P2002 error
+    const prisma = {
+      $transaction: vi.fn(() => {
+        throw prismaError;
+      }),
+    } as unknown as PrismaClient;
+
+    const logger = { error: vi.fn() } as unknown as FastifyBaseLogger;
+    const address =
+      "NSKZ6G52YV7JO2XRVPA3E6UFH72JKE77HX24FZQUDN7WDZ7BUQK53BPTMI";
+    const accountSnapshot: FetchSuccess = {
+      ok: true,
+      amount: 100n,
+      round: 456n,
+    };
+
+    mockedFindByAddress.mockResolvedValue(null);
+    mockedFetchAccount.mockResolvedValue(accountSnapshot);
+
+    const result = await addWatchedAccount(prisma, logger, address);
+
+    expect(result).toEqual({ ok: true, created: false, address });
+    expect(mockedFindByAddress).toHaveBeenCalledWith(prisma, address);
+    expect(mockedFetchAccount).toHaveBeenCalledWith(address);
+    expect(mockedCreateWatchedAccount).not.toHaveBeenCalled();
+    expect(mockedCreateAccountState).not.toHaveBeenCalled();
+  });
+
+  it("should throw db write failed error", async () => {
+    // Force prisma.$transaction to throw
+    const prisma = {
+      $transaction: vi.fn(() => {
+        throw new Error("DB failure");
+      }),
+    } as unknown as PrismaClient;
+    const logger = { error: vi.fn() } as unknown as FastifyBaseLogger;
+    const address =
+      "NSKZ6G52YV7JO2XRVPA3E6UFH72JKE77HX24FZQUDN7WDZ7BUQK53BPTMI";
+    const accountSnapshot: FetchSuccess = {
+      ok: true,
+      amount: 100n,
+      round: 456n,
+    };
+
+    mockedFindByAddress.mockResolvedValue(null);
+    mockedFetchAccount.mockResolvedValue(accountSnapshot);
+
+    await expect(
+      addWatchedAccount(prisma, logger, address),
+    ).rejects.toThrowError(DbWriteFailedError());
+
+    expect(mockedFindByAddress).toHaveBeenCalledWith(prisma, address);
+    expect(mockedFetchAccount).toHaveBeenCalledWith(address);
+    expect(mockedCreateWatchedAccount).not.toHaveBeenCalled();
     expect(mockedCreateAccountState).not.toHaveBeenCalled();
   });
 });

@@ -12,13 +12,26 @@ import { createBalanceChangeNotification } from "../repos/notifications.js";
 const INTERVAL_MS = Number(process.env.POLLER_INTERVAL_MS ?? 60 * 1000);
 const MAX_CONCURRENCY = Number(process.env.POLLER_MAX_CONCURRENCY ?? 10);
 
+/**
+ * pollerPlugin is a Fastify plugin that periodically checks the state of watched Algorand accounts.
+ *
+ * - Runs every INTERVAL_MS ms, limited to MAX_CONCURRENCY.
+ * - Fetches active accounts, gets their state from Algonode, and updates the DB.
+ * - Creates notifications on balance changes.
+ * - Skips cycles if a previous one is still running.
+ * - Registers a shutdown hook to stop polling on server close.
+ *
+ * TODO: poll stats, improve error handling, backoff on repeated errors.
+ *
+ * @param app - Fastify instance
+ */
 export default fp(async (app: FastifyInstance) => {
   let isRunning = false;
-  let timer: NodeJS.Timeout | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
 
   async function tick() {
     if (isRunning) {
-      app.log.warn("Poller is still running, skipping this tick");
+      app.log.warn("Previous poll still running, skipping");
       return;
     }
 
@@ -28,59 +41,58 @@ export default fp(async (app: FastifyInstance) => {
       const accounts = await listActiveWithState(app.prisma);
       app.log.debug({ addressCount: accounts.length }, "Starting poll cycle");
 
+      // Limit concurrency, fetch accounts in parallel
       const limit = pLimit(MAX_CONCURRENCY);
       await Promise.all(
         accounts.map((account) =>
           limit(async () => {
-            try {
-              const snapshot = await fetchAccount(account.address);
-              const balanceDiff = account.state
-                ? snapshot.amount - account.state.balanceMicro
-                : BigInt(0);
-              if (balanceDiff !== BigInt(0)) {
-                const oldBalance = account.state
-                  ? account.state.balanceMicro
-                  : BigInt(0);
-                const newBalance = snapshot.amount;
-                await createBalanceChangeNotification(
-                  app.prisma,
-                  account.address,
-                  oldBalance,
-                  newBalance,
-                  balanceDiff,
-                  snapshot.round,
-                );
-                app.log.info(
-                  { address: account.address, oldBalance, newBalance },
-                  "Account balance changed",
-                );
-              }
-              await updateAccountStateCheckOk(
-                app.prisma,
-                account.address,
-                snapshot.amount,
-                snapshot.round,
-              );
-            } catch (error) {
-              // TODO: handle 429
-              app.log.error(
-                { address: account.address, error: (error as Error)?.message },
-                "Error fetching account",
-              );
+            // Fetch account state from Algorand node
+            const accountSnapshot = await fetchAccount(account.address);
+
+            // Update account state with error
+            if (!accountSnapshot.ok) {
               await updateAccountStateCheckKo(
                 app.prisma,
                 account.address,
-                (error as Error).message,
+                accountSnapshot.message,
+              );
+              return;
+            }
+
+            // Calculate balance change
+            const oldBalance = account.state?.balanceMicro ?? BigInt(0);
+            const newBalance = accountSnapshot.amount;
+            const balanceDiff = newBalance - oldBalance;
+
+            // If balance changed, create notification
+            if (balanceDiff !== BigInt(0)) {
+              await createBalanceChangeNotification(
+                app.prisma,
+                account.address,
+                oldBalance,
+                newBalance,
+                balanceDiff,
+                accountSnapshot.round,
+              );
+              app.log.info(
+                { address: account.address, oldBalance, newBalance },
+                "Account balance changed",
               );
             }
+
+            // Update account state
+            await updateAccountStateCheckOk(
+              app.prisma,
+              account.address,
+              accountSnapshot.amount,
+              accountSnapshot.round,
+            );
           }),
         ),
       );
-    } catch (error) {
-      app.log.error(
-        { error: (error as Error)?.message },
-        "Error in poller tick",
-      );
+    } catch (err) {
+      // TODO: improve error handling - 429 and potential db errors
+      app.log.error({ error: (err as Error)?.message }, "Error in poller tick");
     } finally {
       isRunning = false;
       timer = setTimeout(tick, INTERVAL_MS);

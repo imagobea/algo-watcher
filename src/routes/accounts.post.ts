@@ -18,27 +18,22 @@ export default async function routes(app: FastifyInstance) {
         body: AddAccountSchema,
         response: {
           200: AddAccountResponse.describe("Account already being watched"),
-          201: AddAccountResponse.describe(
-            "Account successfully added to watch list",
-          ),
+          201: AddAccountResponse.describe("Account added to watch list"),
           400: ErrorResponse.describe("Invalid request body"),
           422: ErrorResponse.describe("Invalid Algorand address"),
+          503: ErrorResponse.describe("Database write failed"),
         },
       },
     },
     async (req, reply) => {
       // Add account
       const { address } = req.body;
-      const res = await addWatchedAccount(app.prisma, address);
+      const result = await addWatchedAccount(app.prisma, app.log, address);
 
-      // Handle result
-      if (!res.ok)
-        return reply
-          .code(422)
-          .send({ code: res.code, message: "Invalid Algorand address" });
+      // Return response
       return reply
-        .code(res.created ? 201 : 200)
-        .send({ address: res.address, created: res.created });
+        .code(result.created ? 201 : 200)
+        .send({ address: result.address, created: result.created });
     },
   );
 }
