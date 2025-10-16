@@ -42,7 +42,7 @@ export async function addWatchedAccount(
 ): Promise<AddAccountResult> {
   // Validate Algorand address
   if (!algosdk.isValidAddress(address)) {
-    log.warn(`Invalid Algorand address: ${address}`); // TODO: review logs and formatting
+    log.warn(`Invalid Algorand address: ${address}`);
     throw InvalidAlgoAddressError();
   }
 

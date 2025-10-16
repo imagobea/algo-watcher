@@ -91,7 +91,6 @@ export default fp(async (app: FastifyInstance) => {
         ),
       );
     } catch (err) {
-      // TODO: improve error handling - 429 and potential db errors
       app.log.error({ error: (err as Error)?.message }, "Error in poller tick");
     } finally {
       isRunning = false;

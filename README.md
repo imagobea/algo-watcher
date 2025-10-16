@@ -14,35 +14,24 @@ Small REST API that lets you watch Algorand accounts and logs balance changes ev
 
 ### Development
 
-1. Clone the repository:
-
 ```bash
+#1 Clone the repository
 git clone git@github.com:imagobea/algo-watcher.git
 cd algo-watcher
-```
 
-2. Install dependencies:
-
-```bash
+#2 Install dependencies
 nvm use
 pnpm install
-```
 
-3. Copy the environment file and adjust if needed:
-
-```bash
+#3 Copy the environment file and adjust if needed
 cp .env.example .env
-```
 
-4. Setup the database:
 
-```bash
+#4 Setup the database
 pnpm prisma migrate dev
-```
 
-5. Run the project:
 
-```bash
+#5 Run the project
 pnpm dev
 ```
 
@@ -61,7 +50,17 @@ pnpm dev
 
 ### API
 
-1. Root
+#### Interactive API docs
+
+Available via Swagger UI:
+
+```bash
+# Dev environment
+http://localhost:8080/docs
+```
+It’s automatically generated from the OpenAPI spec, for exploring and testing endpoints directly in the browser.
+
+#### 1. Root
 
 ```bash
 curl localhost:8080/
@@ -82,7 +81,7 @@ curl localhost:8080/
 }
 ```
 
-2. Server liveness
+#### 2. Server liveness
 
 ```bash
 curl localhost:8080/health/liveness
@@ -96,7 +95,7 @@ curl localhost:8080/health/liveness
 }
 ```
 
-3. Server readiness
+#### 3. Server readiness
 
 ```bash
 curl localhost:8080/health/readiness
@@ -110,7 +109,7 @@ curl localhost:8080/health/readiness
 }
 ```
 
-4. POST account (ie start watching)
+#### 4. POST account (ie start watching)
 
 ```bash
 curl -X POST http://localhost:8080/accounts \
@@ -127,7 +126,7 @@ curl -X POST http://localhost:8080/accounts \
 }
 ```
 
-5. GET accounts
+#### 5. GET accounts
 
 ```bash
 curl localhost:8080/accounts
@@ -161,12 +160,6 @@ Follow the [development setup instructions](#Development) to get the server runn
 You can discover accounts to track on the [Lora explorer](https://lora.algokit.io/testnet).
 
 ![terminal-poller-logs](docs/images/terminal-poller.png)
-
-## TODO
-
-- [] api: paginate accounts, notifications endpoint also paginated
-- [] test: increase coverage, integration tests
-- [] ci/cd: dockerise app, gha, ...
 
 ## Extensions
 
