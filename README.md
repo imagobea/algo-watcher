@@ -27,7 +27,7 @@ graph LR
 
 **Key Features:**
 - ✅ Watch multiple Algorand accounts
-- ✅ Background polling every 60s with concurrency control
+- ✅ Background polling (60s intervals after completion) with concurrency control
 - ✅ Balance change notifications with full history
 - ✅ Health checks for production readiness
 - ✅ OpenAPI/Swagger documentation
@@ -50,17 +50,27 @@ sequenceDiagram
     participant Algonode
 
     Client->>API: POST /accounts
-    API->>DB: Save WatchedAccount
-    API-->>Client: 201 Created
+    API->>API: Validate address
+    API->>DB: Check if exists
+    alt Not exists
+        API->>Algonode: Fetch initial state (optional)
+        Algonode-->>API: Account info or error
+        API->>DB: Transaction: Create WatchedAccount + AccountState?
+        API-->>Client: 201 Created
+    else Already exists
+        API-->>Client: 200 OK
+    end
     
-    loop Every 60s
+    loop Every ~60s
         Poller->>DB: Get active accounts
-        Poller->>Algonode: Fetch account data
-        Algonode-->>Poller: Account info
-        Poller->>DB: Update AccountState
-        alt Balance Changed
-            Poller->>DB: Create BalanceChangeNotification
-            Poller->>API: Log notification
+        loop For each account (limited concurrency)
+          Poller->>Algonode: Fetch account data
+          Algonode-->>Poller: Account info
+          alt Fetch succeeded
+            Poller->>DB: Transaction: Update AccountState + Create notification?
+          else Fetch failed
+            Poller->>DB: Update error count
+          end
         end
     end
 ```
