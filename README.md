@@ -2,47 +2,20 @@
 
 ## Description
 
-Small REST API that lets you watch Algorand accounts and logs balance changes every 60s (testnet). Built with Fastify + Prisma (SQLite) + TypeScript.
+Small REST API to "watch" Algorand accounts.
 
-## System requirements
+Users can save Algorand account addresses via the API. Account balances are checked every ~60s (testnet), logging notifications when changes occur.
 
-- NVM (Node Version Management)
-- Node.js vs >= 22.11.0 < 23
-- PNPM version 10.18.2
-
-## How to run
-
-### Development
-
-```bash
-#1 Clone the repository
-git clone git@github.com:imagobea/algo-watcher.git
-cd algo-watcher
-
-#2 Install dependencies
-nvm use
-pnpm install
-
-#3 Copy the environment file and adjust if needed
-cp .env.example .env
-
-
-#4 Setup the database
-pnpm prisma migrate dev
-
-
-#5 Run the project
-pnpm dev
-```
+Built with Fastify + Prisma (SQLite) + TypeScript.
 
 ## Implementation
 
 ### App overview
 
-- Designed for "single-tenant", ie one global watcher list
-- Monitoring account balance changes, ie `amount` in migroAlgos, not full account difference
-- Persisting information via SQLite database
-- Global poller running every 60s with concurrency limit
+- Monitors account balance changes (i.e., `amount` in microAlgos, not full account state differences)
+- Persists data via SQLite database
+- Runs a global poller every 60s with concurrency limit
+- Designed for single-tenant use (i.e., one global watcher list)
 
 ### Data models
 
@@ -151,6 +124,36 @@ curl localhost:8080/accounts
     }
   }
 ]
+```
+## System requirements
+
+- NVM (Node Version Management)
+- Node.js vs >= 22.11.0 < 23
+- PNPM version 10.18.2
+
+## How to run
+
+### Development
+
+```bash
+#1 Clone the repository
+git clone git@github.com:imagobea/algo-watcher.git
+cd algo-watcher
+
+#2 Install dependencies
+nvm use
+pnpm install
+
+#3 Copy the environment file and adjust if needed
+cp .env.example .env
+
+
+#4 Setup the database
+pnpm prisma migrate dev
+
+
+#5 Run the project
+pnpm dev
 ```
 
 ## How to test
