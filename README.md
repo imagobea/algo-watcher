@@ -39,6 +39,15 @@ graph LR
 - Single-tenant architecture (one global watch list)
 - SQLite for simplicity
 
+### Data model
+
+```
+WatchedAccount (1) ──── (1) AccountState
+       │
+       │
+       └──── (N) BalanceChangeNotification
+```
+
 ### System Flow
 
 ```mermaid
@@ -73,15 +82,6 @@ sequenceDiagram
           end
         end
     end
-```
-
-### Data model
-
-```
-WatchedAccount (1) ──── (1) AccountState
-       │
-       │
-       └──── (N) BalanceChangeNotification
 ```
 
 ## API Reference
@@ -216,12 +216,10 @@ test/                      # Vitest test files
 
 This is a demonstration project. For production use, consider:
 
-- [ ] Authentication & authorization (API keys, OAuth)
-- [ ] Rate limiting & request throttling  
+- [ ] Authentication, authorization
+- [ ] Rate limiting
 - [ ] PostgreSQL instead of SQLite
-- [ ] Horizontal scaling (worker processes)
-- [ ] Webhook notifications instead of logs
 - [ ] API versioning (`/v1/accounts`)
-- [ ] Monitoring & alerting (Prometheus, Datadog)
+- [ ] Monitoring & alerting
 - [ ] Ability to pause/resume account watching
-- [ ] Load testing (Apache Bench, k6)
+- [ ] Load testing
