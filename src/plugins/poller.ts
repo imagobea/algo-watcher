@@ -64,6 +64,7 @@ export default fp(async (app: FastifyInstance) => {
             const newBalance = accountSnapshot.amount;
             const balanceDiff = newBalance - oldBalance;
 
+            // TODO: fix - should be in a transaction
             // If balance changed, create notification
             if (balanceDiff !== BigInt(0)) {
               await createBalanceChangeNotification(
