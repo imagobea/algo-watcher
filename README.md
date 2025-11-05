@@ -8,15 +8,21 @@ A REST API service that monitors Algorand account balances and logs notification
 
 ```mermaid
 graph LR
-    A[REST API] --> B[Prisma ORM]
-    B --> C[(SQLite)]
-    A --> D[Poller Service]
-    D --> E[Algonode API]
-    D --> B
+    API[Fastify API]
+    Poller[Background Poller]
+    Prisma[Prisma ORM]
+    DB[(SQLite)]
+    Algonode[Algonode API]
     
-    style A fill:#4a90e2
-    style D fill:#e27d60
-    style E fill:#16a085
+    API --- Prisma
+    Poller --- Prisma
+    Prisma --- DB
+    API -.- Algonode
+    Poller -.- Algonode
+    
+    style API fill:#4a90e2
+    style Poller fill:#e27d60
+    style Algonode fill:#16a085
 ```
 
 **Key Features:**
