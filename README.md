@@ -1,12 +1,30 @@
 # Algorand Account Watcher
 
-## Description
+A REST API service that monitors Algorand account balances and logs notifications when changes occur.
 
-Small REST API to "watch" Algorand accounts.
+**Stack:** Fastify + Prisma (SQLite) + TypeScript
 
-Users can save Algorand account addresses via the API. Account balances are checked every ~60s (testnet), logging notifications when changes occur.
+## Quick Overview
 
-Built with Fastify + Prisma (SQLite) + TypeScript.
+```mermaid
+graph LR
+    A[REST API] --> B[Prisma ORM]
+    B --> C[(SQLite)]
+    A --> D[Poller Service]
+    D --> E[Algonode API]
+    D --> B
+    
+    style A fill:#4a90e2
+    style D fill:#e27d60
+    style E fill:#85dcb0
+```
+
+**Key Features:**
+- ✅ Watch multiple Algorand accounts
+- ✅ Background polling every 60s with concurrency control
+- ✅ Balance change notifications with full history
+- ✅ Health checks for production readiness
+- ✅ OpenAPI/Swagger documentation
 
 ## Implementation
 
